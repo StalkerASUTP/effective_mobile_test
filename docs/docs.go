@@ -402,7 +402,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8081",
-	BasePath:         "/api/v1",
+	BasePath:         "/",
 	Schemes:          []string{"http"},
 	Title:            "Effective Mobile API",
 	Description:      "Сервис для обогащения ФИО информацией из открытых API (возраст, пол, национальность) и хранения данных в базе.",

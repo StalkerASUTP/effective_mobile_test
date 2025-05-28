@@ -17,7 +17,7 @@ import (
 // @version         1.0
 // @description     Сервис для обогащения ФИО информацией из открытых API (возраст, пол, национальность) и хранения данных в базе.
 // @host            localhost:8081
-// @BasePath        /api/v1
+// @BasePath        /
 // @schemes         http
 
 func App() http.Handler {

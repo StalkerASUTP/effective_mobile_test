@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /
 definitions:
   person.CreatePersonRequest:
     description: Запрос на создание новой записи о человеке
