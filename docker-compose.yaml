@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    container_name: env_mob_db
+    environment:
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_USER: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata  # Стандартный путь внутри контейнера
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Используем named volume вместо host path
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
