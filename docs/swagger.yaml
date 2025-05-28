@@ -1,0 +1,281 @@
+basePath: /api/v1
+definitions:
+  person.CreatePersonRequest:
+    description: Запрос на создание новой записи о человеке
+    properties:
+      name:
+        description: Имя (только буквы, обязательное поле)
+        example: Иван
+        type: string
+      patronymics:
+        description: Отчество (необязательное, только буквы)
+        example: Иванович
+        type: string
+      surname:
+        description: Фамилия (только буквы, обязательное поле)
+        example: Иванов
+        type: string
+    required:
+    - name
+    - surname
+    type: object
+  person.GetWithParamResponse:
+    description: Ответ со списком людей и общим количеством
+    properties:
+      count:
+        description: Общее количество записей
+        example: 100
+        type: integer
+      persons:
+        description: Список людей
+        items:
+          $ref: '#/definitions/person.Person'
+        type: array
+    type: object
+  person.Person:
+    description: Модель данных человека с основной информацией
+    properties:
+      age:
+        description: Возраст
+        example: 30
+        type: integer
+      created_at:
+        description: Дата создания
+        example: "2025-05-29T00:00:00Z"
+        type: string
+      deleted_at:
+        description: Дата удаления (мягкое удаление)
+        example: "null"
+        type: string
+      gender:
+        description: Пол (male/female)
+        example: male
+        type: string
+      id:
+        description: ID записи
+        example: 1
+        type: integer
+      name:
+        description: Имя человека
+        example: Иван
+        type: string
+      nationality:
+        description: Национальность (код страны)
+        example: RU
+        type: string
+      patronymics:
+        description: Отчество (если есть)
+        example: Иванович
+        type: string
+      surname:
+        description: Фамилия человека
+        example: Иванов
+        type: string
+      updated_at:
+        description: Дата обновления
+        example: "2025-05-29T00:00:00Z"
+        type: string
+    type: object
+  person.UpdatePersonRequest:
+    description: Запрос на обновление данных о человеке (все поля необязательные)
+    properties:
+      age:
+        description: Возраст (от 0 до 120)
+        example: 30
+        maximum: 120
+        minimum: 0
+        type: integer
+      gender:
+        description: Пол (male/female)
+        enum:
+        - male
+        - female
+        example: male
+        type: string
+      name:
+        description: Имя (только буквы)
+        example: Петр
+        type: string
+      nationality:
+        description: Национальность (код страны ISO 3166-1 alpha-2)
+        example: RU
+        type: string
+      patronymics:
+        description: Отчество (только буквы)
+        example: Петрович
+        type: string
+      surname:
+        description: Фамилия (только буквы)
+        example: Петров
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: Сервис для обогащения ФИО информацией из открытых API (возраст, пол,
+    национальность) и хранения данных в базе.
+  title: Effective Mobile API
+  version: "1.0"
+paths:
+  /person:
+    get:
+      description: Возвращает список людей с возможностью фильтрации и пагинации
+      parameters:
+      - collectionFormat: multi
+        description: Фильтр по имени
+        in: query
+        items:
+          type: string
+        name: name
+        type: array
+      - collectionFormat: multi
+        description: Фильтр по фамилии
+        in: query
+        items:
+          type: string
+        name: surname
+        type: array
+      - collectionFormat: multi
+        description: Фильтр по полу
+        in: query
+        items:
+          type: string
+        name: gender
+        type: array
+      - collectionFormat: multi
+        description: Фильтр по национальности
+        in: query
+        items:
+          type: string
+        name: nationality
+        type: array
+      - description: Минимальный возраст
+        in: query
+        name: age_from
+        type: integer
+      - description: Максимальный возраст
+        in: query
+        name: age_to
+        type: integer
+      - description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: Лимит записей (по умолчанию 20, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/person.GetWithParamResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить список людей с фильтрацией
+      tags:
+      - person
+    post:
+      consumes:
+      - application/json
+      description: Создает новую запись, обогащая данные из внешних API (возраст,
+        пол, национальность)
+      parameters:
+      - description: Данные о человеке
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/person.CreatePersonRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/person.Person'
+        "400":
+          description: Неверные данные или ошибка при обращении к внешнему API
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Создать запись о человеке
+      tags:
+      - person
+  /person/{id}:
+    delete:
+      description: Удаляет запись по указанному ID
+      parameters:
+      - description: ID человека
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Неверные данные или ошибка при обращении к внешнему API
+          schema:
+            type: string
+        "404":
+          description: Не найдено
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Удалить запись о человеке
+      tags:
+      - person
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет данные существующей записи
+      parameters:
+      - description: ID человека
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновляемые данные
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/person.UpdatePersonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/person.Person'
+        "400":
+          description: Неверные данные или ошибка при обращении к внешнему API
+          schema:
+            type: string
+        "404":
+          description: Не найдено
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Обновить данные человека
+      tags:
+      - person
+schemes:
+- http
+swagger: "2.0"

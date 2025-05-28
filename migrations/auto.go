@@ -9,6 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// AutoMigrate выполняет автоматические миграции базы данных
+// @Title Database Migrations
+// @Description Запускает автоматические миграции для всех моделей приложения
+// @Tags Database
 func main() {
 	err := godotenv.Load(".env")
 	if err != nil {

@@ -28,6 +28,17 @@ func NewPersonHandler(router *http.ServeMux, deps PersonHandlerDeps) {
 	router.Handle("GET /person", handler.GetWithParams())
 }
 
+// Create godoc
+// @Summary Создать запись о человеке
+// @Description Создает новую запись, обогащая данные из внешних API (возраст, пол, национальность)
+// @Tags person
+// @Accept json
+// @Produce json
+// @Param input body CreatePersonRequest true "Данные о человеке"
+// @Success 201 {object} Person
+// @Failure 400 {string} string "Неверные данные или ошибка при обращении к внешнему API"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /person [post]
 func (handler *PersonHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := req.HandleBody[CreatePersonRequest](&w, r)
@@ -52,13 +63,27 @@ func (handler *PersonHandler) Create() http.HandlerFunc {
 		}
 		createdPerson, err := handler.PersonRepository.Create(person)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		res.Json(w, createdPerson, http.StatusCreated)
 	}
 }
+
+// Update godoc
+// @Summary Обновить данные человека
+// @Description Обновляет данные существующей записи
+// @Tags person
+// @Accept json
+// @Produce json
+// @Param id path int true "ID человека"
+// @Param input body UpdatePersonRequest true "Обновляемые данные"
+// @Success 200 {object} Person
+// @Failure 400 {string} string "Неверные данные или ошибка при обращении к внешнему API"
+// @Failure 404 {string} string "Не найдено"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /person/{id} [patch]
 func (handler *PersonHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
@@ -80,13 +105,25 @@ func (handler *PersonHandler) Update() http.HandlerFunc {
 		updatePersonFields(person, body)
 		updatedPerson, err := handler.PersonRepository.Update(person)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 
 		}
 		res.Json(w, updatedPerson, http.StatusOK)
 	}
 }
+
+// Delete godoc
+// @Summary Удалить запись о человеке
+// @Description Удаляет запись по указанному ID
+// @Tags person
+// @Produce json
+// @Param id path int true "ID человека"
+// @Success 200
+// @Failure 400 {string} string "Неверные данные или ошибка при обращении к внешнему API"
+// @Failure 404 {string} string "Не найдено"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /person/{id} [delete]
 func (handler *PersonHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
@@ -111,7 +148,22 @@ func (handler *PersonHandler) Delete() http.HandlerFunc {
 
 	}
 }
-
+// GetWithParams godoc
+// @Summary Получить список людей с фильтрацией
+// @Description Возвращает список людей с возможностью фильтрации и пагинации
+// @Tags person
+// @Produce json
+// @Param name query []string false "Фильтр по имени" collectionFormat(multi)
+// @Param surname query []string false "Фильтр по фамилии" collectionFormat(multi)
+// @Param gender query []string false "Фильтр по полу" collectionFormat(multi)
+// @Param nationality query []string false "Фильтр по национальности" collectionFormat(multi)
+// @Param age_from query int false "Минимальный возраст"
+// @Param age_to query int false "Максимальный возраст"
+// @Param page query int false "Номер страницы (по умолчанию 1)"
+// @Param limit query int false "Лимит записей (по умолчанию 20, максимум 100)"
+// @Success 200 {object} GetWithParamResponse
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /person [get]
 func (handler *PersonHandler) GetWithParams() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
@@ -126,11 +178,12 @@ func (handler *PersonHandler) GetWithParams() http.HandlerFunc {
 			limit = 20
 		}
 		offset := (page - 1) * limit
-		filters := make(map[string]any)
-		filters["name"] = getParams(query, "name")
-		filters["surname"] = getParams(query, "surname")
-		filters["gender"] = getParams(query, "gender")
-		filters["nationality"] = getParams(query, "nationality")
+		filters := map[string]any{
+			"name":        getParams(query, "name"),
+			"surname":     getParams(query, "surname"),
+			"gender":      getParams(query, "gender"),
+			"nationality": getParams(query, "nationality"),
+		}
 		if ageFrom := query.Get("age_from"); ageFrom != "" {
 			if age, err := strconv.Atoi(ageFrom); err == nil {
 				filters["age_from"] = age

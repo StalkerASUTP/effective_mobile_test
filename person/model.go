@@ -6,40 +6,44 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"gorm.io/gorm"
 )
 
+// Person представляет модель данных человека
+// @Description Модель данных человека с основной информацией
 type Person struct {
-	gorm.Model
-	Name        string
-	Surname     string
-	Patronymics string
-	Age         int
-	Gender      string
-	Nationality string
+	// ID записи
+	ID uint `gorm:"primarykey" json:"id" example:"1"`
+	// Дата создания
+	CreatedAt time.Time `json:"created_at" example:"2025-05-29T00:00:00Z"`
+	// Дата обновления
+	UpdatedAt time.Time `json:"updated_at" example:"2025-05-29T00:00:00Z"`
+	// Дата удаления (мягкое удаление)
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at" swaggertype:"string" example:"null"`
+	// Имя человека
+	Name string `json:"name" example:"Иван"`
+	// Фамилия человека
+	Surname string `json:"surname" example:"Иванов"`
+	// Отчество (если есть)
+	Patronymics string `json:"patronymics,omitempty" example:"Иванович"`
+	// Возраст
+	Age int `json:"age" example:"30"`
+	// Пол (male/female)
+	Gender string `json:"gender" example:"male"`
+	// Национальность (код страны)
+	Nationality string `json:"nationality" example:"RU"`
 }
 
+// NewPerson создает новую структуру Person
 func NewPerson(name, surname, patronymics string) *Person {
-	newPerson := &Person{
+	return &Person{
 		Name:        name,
 		Surname:     surname,
 		Patronymics: patronymics,
 	}
-	return newPerson
 }
-
-// func (person *Person) AddAge() {
-// 	person.Age =
-// }
-
-// func (person *Person) AddGender() {
-// 	person.Gender = "male"
-// }
-
-// func (person *Person) AddNation() {
-// 	person.Nationality = "tatar"
-// }
 
 func GetAge(name string) (int, error) {
 	encodeName := url.QueryEscape(name)

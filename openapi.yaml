@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Person Enrichment API
+  description: |
+    Сервис принимает ФИО пользователя, обогащает данные через открытые API (`agify.io`, `genderize.io`, `nationalize.io`) и сохраняет результат в базу данных.  
+    Также предоставляет фильтруемый и пагинируемый список сохранённых записей.
+
+    ### Используемые внешние API:
+    - [https://agify.io/](https://agify.io/) — определение вероятного возраста
+    - [https://genderize.io/](https://genderize.io/) — определение пола
+    - [https://nationalize.io/](https://nationalize.io/) — определение национальности
+
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+    description: Локальный сервер
+
+tags:
+  - name: Person
+    description: Операции с данными о человеке
+
+paths:
+  /person:
+    post:
+      tags:
+        - Person
+      summary: Создать нового человека
+      description: |
+        Принимает ФИО, обогащает возрастом, полом и национальностью с помощью внешних API, сохраняет результат в БД.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePersonRequest'
+      responses:
+        '201':
+          description: Успешное создание
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '400':
+          description: Ошибка при обработке запроса
+
+    get:
+      tags:
+        - Person
+      summary: Получить список людей
+      description: |
+        Возвращает список сохранённых людей с возможностью фильтрации по ФИО, полу, возрасту и национальности.  
+        Поддерживает пагинацию.
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Фильтр по имени
+        - in: query
+          name: surname
+          schema:
+            type: string
+          description: Фильтр по фамилии
+        - in: query
+          name: gender
+          schema:
+            type: string
+          description: Фильтр по полу (male, female)
+        - in: query
+          name: nationality
+          schema:
+            type: string
+          description: Фильтр по национальности (ISO 3166-1 alpha-2 код)
+        - in: query
+          name: age_from
+          schema:
+            type: integer
+          description: Минимальный возраст
+        - in: query
+          name: age_to
+          schema:
+            type: integer
+          description: Максимальный возраст
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Номер страницы (по умолчанию: 1)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Количество записей на страницу (максимум: 100)
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWithParamResponse'
+
+  /person/{id}:
+    patch:
+      tags:
+        - Person
+      summary: Обновить данные о человеке
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePersonRequest'
+      responses:
+        '200':
+          description: Успешное обновление
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '404':
+          description: Человек не найден
+
+    delete:
+      tags:
+        - Person
+      summary: Удалить человека
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешное удаление
+        '404':
+          description: Человек не найден
+
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Ivan
+        surname:
+          type: string
+          example: Petrov
+        patronymics:
+          type: string
+          example: Ivanovich
+        gender:
+          type: string
+          example: male
+        nationality:
+          type: string
+          example: RU
+        age:
+          type: integer
+          example: 32
+
+    CreatePersonRequest:
+      type: object
+      required:
+        - name
+        - surname
+      properties:
+        name:
+          type: string
+          example: Ivan
+        surname:
+          type: string
+          example: Petrov
+        patronymics:
+          type: string
+          example: Ivanovich
+
+    UpdatePersonRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        patronymics:
+          type: string
+        gender:
+          type: string
+        nationality:
+          type: string
+        age:
+          type: integer
+
+    GetWithParamResponse:
+      type: object
+      properties:
+        persons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        count:
+          type: integer
+          example: 5
